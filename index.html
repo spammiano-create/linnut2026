@@ -59,7 +59,7 @@
   const db = firebase.firestore();
 
   /* 🐦 SUOMEN LINTULAJIT */
-  const speciesList = " + str(species) + ";
+  const speciesList = " + __import__('json').dumps(species, ensure_ascii=False) + ";
 
   const input = document.getElementById('species');
   const box = document.getElementById('suggestions');
