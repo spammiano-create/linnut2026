@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lintuhavainnot</title>
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; background: #f6f7f8; }
+    header { background: #2e7d32; color: white; padding: 1rem; text-align: center; }
+    main { padding: 1rem; max-width: 720px; margin: auto; }
+    .total { background: #1b5e20; color: white; padding: 1rem; border-radius: 12px; text-align: center; font-size: 1.2rem; margin-bottom: 1rem; }
+    form { background: white; padding: 1rem; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); position: relative; }
+    label { display: block; margin-top: 0.75rem; font-weight: 600; }
+    input, textarea, button { width: 100%; padding: 0.6rem; margin-top: 0.25rem; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; }
+    button { background: #2e7d32; color: white; border: none; margin-top: 1rem; font-weight: 600; }
+    ul { list-style: none; padding: 0; }
+    li { background: white; margin-top: 0.75rem; padding: 0.75rem; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+    .meta { color: #555; font-size: 0.9rem; }
+    .suggestions { position: absolute; background: white; border: 1px solid #ccc; border-radius: 8px; max-height: 200px; overflow-y: auto; width: calc(100% - 2rem); z-index: 10; }
+    .suggestions div { padding: 0.5rem; cursor: pointer; }
+    .suggestions div:hover { background: #e8f5e9; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>🦉 Lintuhavainnot</h1>
+</header>
+<main>
+  <div class="total" id="totalCount">Havaintoja yhteensä: 0</div>
+
+  <form id="observationForm" autocomplete="off">
+    <label>Laji
+      <input type="text" id="species" placeholder="Ala kirjoittaa (esim. tali…)" required />
+      <div id="suggestions" class="suggestions" style="display:none"></div>
+    </label>
+    <label>Määrä
+      <input type="number" id="count" min="1" value="1" />
+    </label>
+    <label>Muistiinpanot
+      <textarea id="notes" rows="3"></textarea>
+    </label>
+    <button type="submit">Tallenna havainto</button>
+  </form>
+
+  <ul id="observations"></ul>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<script>
+  /* 🔧 FIREBASE */
+  const firebaseConfig = {
+    apiKey: "TÄHÄN_API_KEY",
+    authDomain: "TÄHÄN.firebaseapp.com",
+    projectId: "TÄHÄN",
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  /* 🐦 SUOMEN LINTULAJIT */
+  const speciesList = " + str(species) + ";
+
+  const input = document.getElementById('species');
+  const box = document.getElementById('suggestions');
+
+  input.addEventListener('input', () => {
+    const q = input.value.toLowerCase();
+    box.innerHTML = '';
+    if (q.length < 2) { box.style.display = 'none'; return; }
+    const matches = speciesList.filter(s => s.toLowerCase().startsWith(q)).slice(0, 20);
+    if (!matches.length) { box.style.display = 'none'; return; }
+    matches.forEach(name => {
+      const div = document.createElement('div');
+      div.textContent = name;
+      div.onclick = () => { input.value = name; box.style.display = 'none'; };
+      box.appendChild(div);
+    });
+    box.style.display = 'block';
+  });
+
+  document.addEventListener('click', e => {
+    if (!input.contains(e.target)) box.style.display = 'none';
+  });
+
+  const currentYear = new Date().getFullYear();
+  const listEl = document.getElementById('observations');
+  const totalEl = document.getElementById('totalCount');
+
+  function getLocation() {
+    return new Promise(resolve => {
+      if (!navigator.geolocation) return resolve(null);
+      navigator.geolocation.getCurrentPosition(p => resolve({ lat: p.coords.latitude, lon: p.coords.longitude }), () => resolve(null));
+    });
+  }
+
+  async function load() {
+    const snap = await db.collection('observations').where('year','==',currentYear).orderBy('timestamp','desc').get();
+    listEl.innerHTML = '';
+    let total = 0;
+    snap.forEach(doc => {
+      const o = doc.data();
+      total += Number(o.count);
+      const li = document.createElement('li');
+      li.innerHTML = `<strong>${o.species}</strong> (${o.count} kpl)<div class=\"meta\">${new Date(o.timestamp).toLocaleString()}</div>`;
+      listEl.appendChild(li);
+    });
+    totalEl.textContent = `Havaintoja yhteensä (${currentYear}): ${total}`;
+  }
+
+  document.getElementById('observationForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const location = await getLocation();
+    await db.collection('observations').add({
+      species: input.value,
+      count: count.value,
+      notes: notes.value,
+      location,
+      year: currentYear,
+      timestamp: Date.now()
+    });
+    e.target.reset();
+    box.style.display = 'none';
+    load();
+  });
+
+  load();
+</script>
+</body>
+</html>
