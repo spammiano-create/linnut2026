@@ -8,6 +8,7 @@
   <style>
     body { font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; background: #f6f7f8; }
     header { background: #2e7d32; color: white; padding: 1rem; text-align: center; }
+    .version { font-size: 0.75rem; opacity: 0.8; margin-top: -0.5rem; margin-bottom: 0.5rem; }
     main { padding: 1rem; max-width: 720px; margin: auto; }
     .total { 
       background: #1b5e20; 
@@ -46,6 +47,8 @@
 <body>
 <header>
   <h1>🦉 Lintuhavainnot</h1>
+  <!-- ← LISÄTTY: Versionumero pienellä fontilla -->
+  <div class="version">v1.0</div>
 </header>
 <main>
   <div class="total" id="totalCount">Havaintoja yhteensä: 0</div>
@@ -137,7 +140,7 @@
 
   getLocation();
 
-  /* ← REAALIAIKAINEN PÄIVITYS + TOIMINNOT */
+  /* REAALIAIKAINEN PÄIVITYS */
   const currentYear = new Date().getFullYear();
   const listEl = document.getElementById('observations');
   const totalEl = document.getElementById('totalCount');
@@ -145,7 +148,6 @@
 
   let observationsVisible = false;
 
-  // REAALIAIKAINEN KUUNNITTELIJA - PÄIVITTÄÄ LUKUMÄÄRÄN HETI
   db.collection('observations')
     .where('year', '==', currentYear)
     .orderBy('timestamp', 'desc')
