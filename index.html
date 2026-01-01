@@ -48,10 +48,7 @@
   <h1>🦉 Lintuhavainnot</h1>
 </header>
 <main>
-  <!-- Kokonaismäärä näkyy aina -->
   <div class="total" id="totalCount">Havaintoja yhteensä: 0</div>
-
-  <!-- Erillinen "linkki" listan näyttämiseen -->
   <div class="toggle-list">
     <button type="button" id="toggleListBtn">Näytä lintulista</button>
   </div>
@@ -78,7 +75,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <script>
-  /* ← MUUTETTU: OMA FIREBASE KONFIGURAATIO */
+  /* FIREBASE KONFIGURAATIO */
   const firebaseConfig = {
     apiKey: "AIzaSyDQEGBV8yBGcbdzKCpBD8u_EwMhvJCZXDI",
     authDomain: "linnut2026.firebaseapp.com",
@@ -92,7 +89,7 @@
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
 
-  /* 🐦 SUOMEN LINTULAJIT */
+  /* LINTULAJIT */
   const speciesList = [
     "Laulujoutsen","Metsähanhi","Merihanhi","Kanadanhanhi","Haapana",
     "Tavi","Telkkä","Tukkasotka","Haahka","Teeri","Metso",
@@ -140,6 +137,7 @@
 
   getLocation();
 
+  /* ← REAALIAIKAINEN PÄIVITYS + TOIMINNOT */
   const currentYear = new Date().getFullYear();
   const listEl = document.getElementById('observations');
   const totalEl = document.getElementById('totalCount');
@@ -147,25 +145,24 @@
 
   let observationsVisible = false;
 
-  async function load() {
-    const snap = await db.collection('observations')
-      .where('year','==',currentYear)
-      .orderBy('timestamp','desc')
-      .get();
-
-    listEl.innerHTML = '';
-    let total = 0;
-    snap.forEach(doc => {
-      const o = doc.data();
-      total++;
-      const li = document.createElement('li');
-      li.innerHTML = `<strong>${o.species}</strong><div class="meta">${new Date(o.timestamp).toLocaleString()}</div>`;
-      listEl.appendChild(li);
+  // REAALIAIKAINEN KUUNNITTELIJA - PÄIVITTÄÄ LUKUMÄÄRÄN HETI
+  db.collection('observations')
+    .where('year', '==', currentYear)
+    .orderBy('timestamp', 'desc')
+    .onSnapshot((snap) => {
+      listEl.innerHTML = '';
+      let total = 0;
+      snap.forEach(doc => {
+        const o = doc.data();
+        total++;
+        const li = document.createElement('li');
+        li.innerHTML = `<strong>${o.species}</strong><div class="meta">${new Date(o.timestamp).toLocaleString()}</div>`;
+        listEl.appendChild(li);
+      });
+      
+      totalEl.textContent = `Havaintoja yhteensä (${currentYear}): ${total}`;
+      listEl.style.display = observationsVisible ? 'block' : 'none';
     });
-
-    totalEl.textContent = `Havaintoja yhteensä (${currentYear}): ${total}`;
-    listEl.style.display = observationsVisible ? 'block' : 'none';
-  }
 
   toggleBtn.addEventListener('click', () => {
     observationsVisible = !observationsVisible;
@@ -184,14 +181,11 @@
       });
       e.target.reset();
       box.innerHTML = '';
-      load();
     } catch (error) {
       console.error('Tallennus epäonnistui:', error);
       alert('Virhe tallennuksessa: ' + error.message);
     }
   });
-
-  load();
 </script>
 </body>
 </html>
