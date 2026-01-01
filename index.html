@@ -78,6 +78,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <script>
+  /* FIREBASE KONFIGURAATIO */
   const firebaseConfig = {
     apiKey: "AIzaSyDQEGBV8yBGcbdzKCpBD8u_EwMhvJCZXDI",
     authDomain: "linnut2026.firebaseapp.com",
@@ -91,8 +92,55 @@
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
 
-  // ... kaikki lajilista ja map-koodi ennallaan ...
+  /* LINTULAJIT */
+  const speciesList = [
+    "Laulujoutsen","Metsähanhi","Merihanhi","Kanadanhanhi","Haapana",
+    "Tavi","Telkkä","Tukkasotka","Haahka","Teeri","Metso",
+    "Pyy","Riekko","Kurki","Kuovi","Kalalokki","Harmaalokki",
+    "Merikotka","Hiirihaukka","Varpushaukka","Punarinta","Peippo",
+    "Talitiainen","Sinitiainen","Harakka","Närhi","Varis"
+  ];
 
+  const input = document.getElementById('species');
+  const box = document.getElementById('suggestions');
+
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    box.innerHTML = '';
+    if (q.length < 1) return;
+    const matches = speciesList.filter(s => s.toLowerCase().startsWith(q));
+    matches.forEach(name => {
+      const div = document.createElement('div');
+      div.textContent = name;
+      div.onclick = () => { input.value = name; box.innerHTML = ''; };
+      box.appendChild(div);
+    });
+  });
+
+  let map, marker;
+  function showMap(lat, lon) {
+    const mapDiv = document.getElementById('map');
+    mapDiv.style.display = 'block';
+    if (!map) {
+      map = L.map('map').setView([lat, lon], 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+      marker = L.marker([lat, lon]).addTo(map);
+    } else {
+      map.setView([lat, lon], 13);
+      marker.setLatLng([lat, lon]);
+    }
+  }
+
+  function getLocation() {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(pos => {
+      showMap(pos.coords.latitude, pos.coords.longitude);
+    });
+  }
+
+  getLocation();
+
+  /* REAALIAIKAINEN PÄIVITYS */
   const currentYear = new Date().getFullYear();
   const listEl = document.getElementById('observations');
   const totalEl = document.getElementById('totalCount');
@@ -100,32 +148,10 @@
 
   let observationsVisible = false;
 
-  // DEBUG: Testaa ensin yksinkertainen get()
-  async function testLoad() {
-    console.log('Testaan latausta...');
-    try {
-      const snap = await db.collection('observations')
-        .where('year', '==', currentYear)
-        .orderBy('timestamp', 'desc')
-        .get();
-      
-      console.log('Löytyi dokumentteja:', snap.size);
-      let total = snap.size;
-      totalEl.textContent = `Havaintoja yhteensä (${currentYear}): ${total}`;
-    } catch (error) {
-      console.error('Latausvirhe:', error);
-    }
-  }
-
-  // Käynnistä testi
-  testLoad();
-
-  // Sitten reaaliaikainen
-  const unsubscribe = db.collection('observations')
+  db.collection('observations')
     .where('year', '==', currentYear)
     .orderBy('timestamp', 'desc')
     .onSnapshot((snap) => {
-      console.log('onSnapshot käynnistyi, dokumentteja:', snap.size);
       listEl.innerHTML = '';
       let total = 0;
       snap.forEach(doc => {
@@ -138,11 +164,8 @@
       
       totalEl.textContent = `Havaintoja yhteensä (${currentYear}): ${total}`;
       listEl.style.display = observationsVisible ? 'block' : 'none';
-    }, (error) => {
-      console.error('onSnapshot-virhe:', error);
     });
 
-  // Loput toiminnot...
   toggleBtn.addEventListener('click', () => {
     observationsVisible = !observationsVisible;
     listEl.style.display = observationsVisible ? 'block' : 'none';
@@ -160,9 +183,9 @@
       });
       e.target.reset();
       box.innerHTML = '';
-      console.log('Tallennus onnistui');
     } catch (error) {
-      console.error('Tallennusvirhe:', error);
+      console.error('Tallennus epäonnistui:', error);
+      alert('Virhe tallennuksessa: ' + error.message);
     }
   });
 </script>
