@@ -9,11 +9,31 @@
     body { font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; background: #f6f7f8; }
     header { background: #2e7d32; color: white; padding: 1rem; text-align: center; }
     main { padding: 1rem; max-width: 720px; margin: auto; }
-    .total { background: #1b5e20; color: white; padding: 1rem; border-radius: 12px; text-align: center; font-size: 1.2rem; margin-bottom: 1rem; }
+    .total { 
+      background: #1b5e20; 
+      color: white; 
+      padding: 1rem; 
+      border-radius: 12px; 
+      text-align: center; 
+      font-size: 1.2rem; 
+      margin-bottom: 0.5rem; 
+    }
+    .toggle-list {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    .toggle-list button {
+      background: transparent;
+      border: none;
+      color: #1b5e20;
+      text-decoration: underline;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
     form { background: white; padding: 1rem; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
     label { display: block; margin-top: 0.75rem; font-weight: 600; }
     input, textarea, button { width: 100%; padding: 0.6rem; margin-top: 0.25rem; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; }
-    button { background: #2e7d32; color: white; border: none; margin-top: 1rem; font-weight: 600; }
+    button[type="submit"] { background: #2e7d32; color: white; border: none; margin-top: 1rem; font-weight: 600; }
     ul { list-style: none; padding: 0; }
     li { background: white; margin-top: 0.75rem; padding: 0.75rem; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
     .meta { color: #555; font-size: 0.9rem; }
@@ -28,7 +48,13 @@
   <h1>🦉 Lintuhavainnot</h1>
 </header>
 <main>
+  <!-- Kokonaismäärä näkyy aina -->
   <div class="total" id="totalCount">Havaintoja yhteensä: 0</div>
+
+  <!-- Erillinen "linkki" listan näyttämiseen -->
+  <div class="toggle-list">
+    <button type="button" id="toggleListBtn">Näytä lintulista</button>
+  </div>
 
   <form id="observationForm" autocomplete="off">
     <label>Laji
@@ -52,16 +78,21 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <script>
-  /* FIREBASE */
+  /* ← MUUTETTU: OMA FIREBASE KONFIGURAATIO */
   const firebaseConfig = {
     apiKey: "AIzaSyDQEGBV8yBGcbdzKCpBD8u_EwMhvJCZXDI",
     authDomain: "linnut2026.firebaseapp.com",
     projectId: "linnut2026",
+    storageBucket: "linnut2026.firebasestorage.app",
+    messagingSenderId: "387302599390",
+    appId: "1:387302599390:web:9b0642d85a03183bcc304f",
+    measurementId: "G-0T31GWSEPK"
   };
+  
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
 
-  /* 🐦 SUOMEN LINTULAJIT – KOVAKOODATTU TESTATTU LISTA */
+  /* 🐦 SUOMEN LINTULAJIT */
   const speciesList = [
     "Laulujoutsen","Metsähanhi","Merihanhi","Kanadanhanhi","Haapana",
     "Tavi","Telkkä","Tukkasotka","Haahka","Teeri","Metso",
@@ -112,35 +143,56 @@
   const currentYear = new Date().getFullYear();
   const listEl = document.getElementById('observations');
   const totalEl = document.getElementById('totalCount');
+  const toggleBtn = document.getElementById('toggleListBtn');
+
+  let observationsVisible = false;
 
   async function load() {
-    const snap = await db.collection('observations').where('year','==',currentYear).orderBy('timestamp','desc').get();
+    const snap = await db.collection('observations')
+      .where('year','==',currentYear)
+      .orderBy('timestamp','desc')
+      .get();
+
     listEl.innerHTML = '';
     let total = 0;
     snap.forEach(doc => {
       const o = doc.data();
       total++;
       const li = document.createElement('li');
-      li.innerHTML = `<strong>${o.species}</strong><div class=\"meta\">${new Date(o.timestamp).toLocaleString()}</div>`;
+      li.innerHTML = `<strong>${o.species}</strong><div class="meta">${new Date(o.timestamp).toLocaleString()}</div>`;
       listEl.appendChild(li);
     });
+
     totalEl.textContent = `Havaintoja yhteensä (${currentYear}): ${total}`;
+    listEl.style.display = observationsVisible ? 'block' : 'none';
   }
+
+  toggleBtn.addEventListener('click', () => {
+    observationsVisible = !observationsVisible;
+    listEl.style.display = observationsVisible ? 'block' : 'none';
+    toggleBtn.textContent = observationsVisible ? 'Piilota lintulista' : 'Näytä lintulista';
+  });
 
   document.getElementById('observationForm').addEventListener('submit', async e => {
     e.preventDefault();
-    await db.collection('observations').add({
-      species: input.value,
-      notes: notes.value,
-      year: currentYear,
-      timestamp: Date.now()
-    });
-    e.target.reset();
-    box.innerHTML = '';
-    load();
+    try {
+      await db.collection('observations').add({
+        species: input.value,
+        notes: notes.value,
+        year: currentYear,
+        timestamp: Date.now()
+      });
+      e.target.reset();
+      box.innerHTML = '';
+      load();
+    } catch (error) {
+      console.error('Tallennus epäonnistui:', error);
+      alert('Virhe tallennuksessa: ' + error.message);
+    }
   });
 
   load();
 </script>
 </body>
 </html>
+
