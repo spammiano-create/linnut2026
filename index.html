@@ -196,10 +196,9 @@
     e.preventDefault();
     try {
       await db.collection('observations').add({
-        species: input.value,
-        notes: notes.value,
-        year: currentYear,
-        timestamp: Date.now()
+  species: input.value,
+  notes: notes.value,
+  timestamp: Date.now()
       });
       e.target.reset();
       box.innerHTML = '';
