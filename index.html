@@ -149,12 +149,32 @@
   let observationsVisible = false;
 
   db.collection('observations')
-    .where('year', '==', currentYear)
-    .orderBy('timestamp', 'desc')
-    .onSnapshot((snap) => {
-      listEl.innerHTML = '';
-      let total = 0;
-      snap.forEach(doc => {
+  .orderBy('timestamp', 'desc')
+  .onSnapshot((snap) => {
+    listEl.innerHTML = '';
+    let total = 0;
+
+    snap.forEach(doc => {
+      const o = doc.data();
+      if (!o.timestamp) return;
+
+      const year = new Date(o.timestamp).getFullYear();
+      if (year !== currentYear) return;
+
+      total++;
+
+      const li = document.createElement('li');
+      li.innerHTML = `
+        <strong>${o.species}</strong>
+        <div class="meta">${new Date(o.timestamp).toLocaleString()}</div>
+      `;
+      listEl.appendChild(li);
+    });
+
+    totalEl.textContent = `Havaintoja yhteensä (${currentYear}): ${total}`;
+    listEl.style.display = observationsVisible ? 'block' : 'none';
+  });
+
         const o = doc.data();
         total++;
         const li = document.createElement('li');
