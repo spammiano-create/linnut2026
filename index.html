@@ -5,13 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lintuhavainnot</title>
 
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Leaflet CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
 
   <style>
-    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; background: #f6f7f8; }
-    header { background: #2e7d32; color: white; padding: 1rem; text-align: center; }
-    .version { font-size: 0.75rem; opacity: 0.8; }
-    main { padding: 1rem; max-width: 720px; margin: auto; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 0;
+      background: #f6f7f8;
+    }
+    header {
+      background: #2e7d32;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+    }
+    .version {
+      font-size: 0.75rem;
+      opacity: 0.8;
+    }
+    main {
+      padding: 1rem;
+      max-width: 720px;
+      margin: auto;
+    }
     .total {
       background: #1b5e20;
       color: white;
@@ -22,41 +42,90 @@
       margin-bottom: 1rem;
       cursor: pointer;
     }
-    form { background: white; padding: 1rem; border-radius: 12px; }
-    label { display: block; margin-top: 0.75rem; font-weight: 600; }
-    input, textarea, button {
+    form {
+      background: white;
+      padding: 1rem;
+      border-radius: 12px;
+    }
+    label {
+      display: block;
+      margin-top: 0.75rem;
+      font-weight: 600;
+    }
+    input,
+    textarea,
+    button {
       width: 100%;
       padding: 0.6rem;
       margin-top: 0.25rem;
       border-radius: 8px;
       border: 1px solid #ccc;
+      font-size: 1rem;
     }
-    button { background: #2e7d32; color: white; border: none; margin-top: 1rem; }
-    ul { list-style: none; padding: 0; display: none; }
-    li { background: white; margin-top: 0.5rem; padding: 0.75rem; border-radius: 10px; }
-    .meta { font-size: 0.9rem; color: #555; }
-    #map { height: 250px; margin-top: 1rem; border-radius: 12px; display: none; }
+    button {
+      background: #2e7d32;
+      color: white;
+      border: none;
+      margin-top: 1rem;
+      font-weight: 600;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+      display: none;
+    }
+    li {
+      background: white;
+      margin-top: 0.5rem;
+      padding: 0.75rem;
+      border-radius: 10px;
+    }
+    .meta {
+      font-size: 0.9rem;
+      color: #555;
+    }
+    #map {
+      height: 250px;
+      margin-top: 1rem;
+      border-radius: 12px;
+      display: none;
+    }
+    .suggestions {
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .suggestions div {
+      padding: 0.5rem;
+      cursor: pointer;
+    }
+    .suggestions div:hover {
+      background: #e8f5e9;
+    }
   </style>
 </head>
 
 <body>
 <header>
   <h1>🦉 Lintuhavainnot</h1>
-  <div class="version">v1.6</div>
+  <div class="version">v1.1</div>
 </header>
 
 <main>
   <div class="total" id="totalCount">Havaintoja yhteensä: 0</div>
 
-  <form id="observationForm">
+  <form id="observationForm" autocomplete="off">
     <label>Laji
-      <input type="text" id="species" required />
+      <input type="text" id="species" placeholder="Ala kirjoittaa lajin nimeä" required />
+      <div id="suggestions" class="suggestions"></div>
     </label>
 
     <div id="map"></div>
 
     <label>Muistiinpanot
-      <textarea id="notes"></textarea>
+      <textarea id="notes" rows="3"></textarea>
     </label>
 
     <button type="submit">Tallenna havainto</button>
@@ -65,96 +134,131 @@
   <ul id="observations"></ul>
 </main>
 
+<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Firebase compat SDK:t -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-<script>
-/* FIREBASE */
-firebase.initializeApp({
-  apiKey: "AIzaSyDQEGBV8yBGcbdzKCpBD8u_EwMhvJCZXDI",
-  authDomain: "linnut2026.firebaseapp.com",
-  projectId: "linnut2026"
-});
-const db = firebase.firestore();
-
-  /* Lajilista */
-  <script type="module">
+<!-- PÄÄSKRIPTI MODUULINA, JOTTA VOIDAAN KÄYTTÄÄ import -->
+<script type="module">
   import { speciesList } from "./species.js";
 
-  // olemassa oleva lajihakukoodisi toimii sellaisenaan
+  /* FIREBASE KONFIGURAATIO */
+  firebase.initializeApp({
+    apiKey: "AIzaSyDQEGBV8yBGcbdzKCpBD8u_EwMhvJCZXDI",
+    authDomain: "linnut2026.firebaseapp.com",
+    projectId: "linnut2026"
+  });
+  const db = firebase.firestore();
 
+  /* Autocomplete lajille */
+  const speciesInput = document.getElementById("species");
+  const suggestions = document.getElementById("suggestions");
 
-/* SIJAINTI + KARTTA */
-let map, currentLat=null, currentLon=null;
-navigator.geolocation.getCurrentPosition(pos => {
-  currentLat = pos.coords.latitude;
-  currentLon = pos.coords.longitude;
-
-  map = L.map("map").setView([currentLat,currentLon],13);
-  document.getElementById("map").style.display="block";
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
-});
-
-/* LISTA + LASKURI */
-const listEl = document.getElementById("observations");
-const totalEl = document.getElementById("totalCount");
-let listVisible = false;
-const yearNow = new Date().getFullYear();
-let markers = [];
-
-db.collection("observations").orderBy("timestamp","desc")
-.onSnapshot(snap=>{
-  listEl.innerHTML="";
-  markers.forEach(m=>map.removeLayer(m));
-  markers = [];
-  let total=0;
-
-  snap.forEach(doc=>{
-    const o = doc.data();
-    if (!o.timestamp) return;
-    if (new Date(o.timestamp).getFullYear() !== yearNow) return;
-
-    total++;
-
-    const li = document.createElement("li");
-    li.innerHTML = `
-      <strong>${o.species}</strong>
-      <div class="meta">
-        ${new Date(o.timestamp).toLocaleString()}
-      </div>`;
-    listEl.appendChild(li);
-
-    if (o.lat && o.lon && map) {
-      const m = L.marker([o.lat,o.lon]).addTo(map);
-      m.bindPopup(o.species);
-      markers.push(m);
-    }
+  speciesInput.addEventListener("input", () => {
+    const q = speciesInput.value.trim().toLowerCase();
+    suggestions.innerHTML = "";
+    if (q.length < 1) return;
+    const matches = speciesList.filter(s => s.toLowerCase().startsWith(q));
+    matches.forEach(name => {
+      const div = document.createElement("div");
+      div.textContent = name;
+      div.onclick = () => {
+        speciesInput.value = name;
+        suggestions.innerHTML = "";
+      };
+      suggestions.appendChild(div);
+    });
   });
 
-  totalEl.textContent = `Havaintoja yhteensä (${yearNow}): ${total}`;
-  listEl.style.display = listVisible ? "block" : "none";
-});
+  /* SIJAINTI + KARTTA */
+  let map, currentLat = null, currentLon = null, markers = [];
+  const mapDiv = document.getElementById("map");
 
-/* AVAA / SULJE LISTA KLIKKAAMALLA LASKURIA */
-totalEl.onclick = () => {
-  listVisible = !listVisible;
-  listEl.style.display = listVisible ? "block" : "none";
-};
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos => {
+      currentLat = pos.coords.latitude;
+      currentLon = pos.coords.longitude;
 
-/* TALLENNUS */
-document.getElementById("observationForm").onsubmit = async e => {
-  e.preventDefault();
-  await db.collection("observations").add({
-    species: species.value,
-    notes: notes.value,
-    timestamp: Date.now(),
-    lat: currentLat,
-    lon: currentLon
-  });
-  e.target.reset();
-};
+      map = L.map("map").setView([currentLat, currentLon], 13);
+      mapDiv.style.display = "block";
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "&copy; OpenStreetMap contributors"
+      }).addTo(map);
+    }, err => {
+      console.warn("Geolocation hylätty tai epäonnistui:", err);
+    });
+  }
+
+  /* LISTA + LASKURI */
+  const listEl = document.getElementById("observations");
+  const totalEl = document.getElementById("totalCount");
+  const yearNow = new Date().getFullYear();
+  let listVisible = false;
+
+  db.collection("observations")
+    .orderBy("timestamp", "desc")
+    .onSnapshot(snap => {
+      listEl.innerHTML = "";
+      markers.forEach(m => map && map.removeLayer(m));
+      markers = [];
+      let total = 0;
+
+      snap.forEach(doc => {
+        const o = doc.data();
+        if (!o.timestamp) return;
+        if (new Date(o.timestamp).getFullYear() !== yearNow) return;
+
+        total++;
+
+        const li = document.createElement("li");
+        li.innerHTML = `
+          <strong>${o.species}</strong>
+          <div class="meta">
+            ${new Date(o.timestamp).toLocaleString()}
+          </div>`;
+        listEl.appendChild(li);
+
+        if (o.lat && o.lon && map) {
+          const m = L.marker([o.lat, o.lon]).addTo(map);
+          m.bindPopup(o.species);
+          markers.push(m);
+        }
+      });
+
+      totalEl.textContent = `Havaintoja yhteensä (${yearNow}): ${total}`;
+      listEl.style.display = listVisible ? "block" : "none";
+    });
+
+  totalEl.onclick = () => {
+    listVisible = !listVisible;
+    listEl.style.display = listVisible ? "block" : "none";
+  };
+
+  /* TALLENNUS */
+  const form = document.getElementById("observationForm");
+  const notesInput = document.getElementById("notes");
+
+  form.onsubmit = async e => {
+    e.preventDefault();
+    if (!speciesInput.value.trim()) return;
+
+    await db.collection("observations").add({
+      species: speciesInput.value.trim(),
+      notes: notesInput.value.trim(),
+      timestamp: Date.now(),
+      lat: currentLat,
+      lon: currentLon
+    });
+
+    form.reset();
+    suggestions.innerHTML = "";
+  };
 </script>
 </body>
 </html>
+
 
