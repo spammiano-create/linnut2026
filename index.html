@@ -41,6 +41,11 @@
       font-size: 1.2rem;
       margin-bottom: 1rem;
       cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+    .total.blue {
+      background: #1565c0; /* sininen */
+      color: #e3f2fd;
     }
     form {
       background: white;
@@ -53,7 +58,6 @@
       font-weight: 600;
     }
     input,
-    textarea,
     button {
       width: 100%;
       padding: 0.6rem;
@@ -110,7 +114,7 @@
 <body>
 <header>
   <h1>🦉 Lintuhavainnot</h1>
-  <div class="version">v1.1</div>
+  <div class="version">v1.2</div>
 </header>
 
 <main>
@@ -123,10 +127,6 @@
     </label>
 
     <div id="map"></div>
-
-    <label>Muistiinpanot
-      <textarea id="notes" rows="3"></textarea>
-    </label>
 
     <button type="submit">Tallenna havainto</button>
   </form>
@@ -141,11 +141,10 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-<!-- PÄÄSKRIPTI MODUULINA, JOTTA VOIDAAN KÄYTTÄÄ import -->
 <script type="module">
-  import { speciesList } from "./species.js";
+  import { speciesList } from "./species.js"; /* species.js tulee olla samassa kansiossa [web:6][web:27] */
 
-  /* FIREBASE KONFIGURAATIO */
+  /* FIREBASE KONFIGURAATIO (projektisi linnut2026) [web:18] */
   firebase.initializeApp({
     apiKey: "AIzaSyDQEGBV8yBGcbdzKCpBD8u_EwMhvJCZXDI",
     authDomain: "linnut2026.firebaseapp.com",
@@ -173,7 +172,7 @@
     });
   });
 
-  /* SIJAINTI + KARTTA */
+  /* SIJAINTI + KARTTA (Leaflet-perusmalli) [web:11][web:15] */
   let map, currentLat = null, currentLon = null, markers = [];
   const mapDiv = document.getElementById("map");
 
@@ -193,7 +192,7 @@
     });
   }
 
-  /* LISTA + LASKURI */
+  /* LISTA + LASKURI (reaaliaikainen kuuntelu Firestoresta) [web:18] */
   const listEl = document.getElementById("observations");
   const totalEl = document.getElementById("totalCount");
   const yearNow = new Date().getFullYear();
@@ -233,14 +232,24 @@
       listEl.style.display = listVisible ? "block" : "none";
     });
 
+  /* UI: väri vaihtuu ja teksti "2026 linnut" + scroll listan alkuun */
   totalEl.onclick = () => {
-    listVisible = !listVisible;
-    listEl.style.display = listVisible ? "block" : "none";
+    // Vaihda väri siniseksi ja teksti vuoden mukaan
+    totalEl.classList.add("blue");
+    totalEl.textContent = `${yearNow} linnut`;
+
+    // Näytä lista, jos ei vielä näkyvissä
+    listVisible = true;
+    listEl.style.display = "block";
+
+    // Scrollaa listan alkuun
+    if (listEl.firstElementChild) {
+      listEl.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   };
 
   /* TALLENNUS */
   const form = document.getElementById("observationForm");
-  const notesInput = document.getElementById("notes");
 
   form.onsubmit = async e => {
     e.preventDefault();
@@ -248,7 +257,6 @@
 
     await db.collection("observations").add({
       species: speciesInput.value.trim(),
-      notes: notesInput.value.trim(),
       timestamp: Date.now(),
       lat: currentLat,
       lon: currentLon
@@ -260,5 +268,6 @@
 </script>
 </body>
 </html>
+
 
 
