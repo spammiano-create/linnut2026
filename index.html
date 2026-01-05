@@ -78,6 +78,13 @@ firebase.initializeApp({
 });
 const db = firebase.firestore();
 
+  /* Lajilista */
+  <script type="module">
+  import { speciesList } from "./species.js";
+
+  // olemassa oleva lajihakukoodisi toimii sellaisenaan
+
+
 /* SIJAINTI + KARTTA */
 let map, currentLat=null, currentLon=null;
 navigator.geolocation.getCurrentPosition(pos => {
