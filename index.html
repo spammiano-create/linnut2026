@@ -92,7 +92,7 @@
 <body>
 <header>
   <h1>🦉 Lintuhavainnot</h1>
-  <div class="version">v1.6</div>
+  <div class="version">v1.7</div>
 </header>
 
 <main>
@@ -125,9 +125,8 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <script type="module">
-import { speciesList } from "./species.js"; /* species.js samassa kansiossa [web:6][web:27] */
+import { speciesList } from "./species.js";
 
-/* FIREBASE */
 firebase.initializeApp({
   apiKey: "AIzaSyDQEGBV8yBGcbdzKCpBD8u_EwMhvJCZXDI",
   authDomain: "linnut2026.firebaseapp.com",
@@ -141,8 +140,8 @@ let currentUser = null;
 let unsubscribeObservations = null;
 
 /* ELEMENTIT */
-const email = document.getElementById("email");
-const password = document.getElementById("password");
+const emailEl = document.getElementById("email");
+const passwordEl = document.getElementById("password");
 const loginBtn = document.getElementById("loginBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 const totalCount = document.getElementById("totalCount");
@@ -193,16 +192,20 @@ speciesInput.oninput = () => {
 /* HAVAINTOJEN LISTA + LASKURI (per käyttäjä) */
 const yearNow = new Date().getFullYear();
 let listVisible = false;
-let isBlueMode = false;
+let toggleActive = false;  // ← KORJATTU: selkeämpi nimi
 
 function subscribeObservations() {
   if (!currentUser) return;
+  console.log("Subscribe käyttäjälle:", currentUser.uid);
+  
   if (unsubscribeObservations) unsubscribeObservations();
 
   unsubscribeObservations = db.collection("observations")
     .where("uid", "==", currentUser.uid)
     .orderBy("timestamp", "desc")
     .onSnapshot(snap => {
+      console.log("Snapshot:", snap.size, "dokumenttia");
+      
       observations.innerHTML = "";
       markers.forEach(m => map && map.removeLayer(m));
       markers = [];
@@ -219,9 +222,7 @@ function subscribeObservations() {
         li.innerHTML = `
           <div class="li-content">
             <strong>${o.species}</strong>
-            <div class="meta">
-              ${new Date(o.timestamp).toLocaleString()}
-            </div>
+            <div class="meta">${new Date(o.timestamp).toLocaleString()}</div>
           </div>
           <button class="delete-btn" data-doc-id="${doc.id}">×</button>`;
         observations.appendChild(li);
@@ -233,33 +234,29 @@ function subscribeObservations() {
         }
       });
 
-      if (isBlueMode) {
+      // ← KORJATTU: Teksti päivittyy aina snapshotin mukaan
+      if (toggleActive) {
         totalCount.textContent = `${yearNow} linnut`;
-        totalCount.classList.add("blue");
       } else {
         totalCount.textContent = `Havaintoja yhteensä (${yearNow}): ${total}`;
-        totalCount.classList.remove("blue");
       }
-
+      totalCount.classList.toggle("blue", toggleActive);
       observations.style.display = listVisible ? "block" : "none";
+    }, error => {
+      console.error("Snapshot-virhe:", error);
     });
 }
 
-/* TOGGLE: VÄRI + TEKSTI + SCROLL */
+/* TOGGLE: VÄRI + SCROLL (teksti snapshotin vastuulla) ← KORJATTU */
 totalCount.onclick = () => {
-  if (!currentUser) return; // ei tee mitään jos ei kirjautunut
+  if (!currentUser) return;
 
-  isBlueMode = !isBlueMode;
+  toggleActive = !toggleActive;  // ← Vain tila muuttuu
   listVisible = true;
   observations.style.display = "block";
 
-  // Teksti ja väri muuttuvat, varsinainen määrä päivittyy snapshotissa
-  if (isBlueMode) {
-    totalCount.textContent = `${yearNow} linnut`;
-    totalCount.classList.add("blue");
-  } else {
-    totalCount.classList.remove("blue");
-  }
+  // Vain väri muuttuu välittömästi, teksti päivittyy snapshotissa
+  totalCount.classList.toggle("blue", toggleActive);
 
   if (observations.firstElementChild) {
     observations.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -309,7 +306,7 @@ auth.onAuthStateChanged(user => {
     observations.innerHTML = "";
     observations.style.display = "none";
     listVisible = false;
-    isBlueMode = false;
+    toggleActive = false;  // ← Resetoi toggle
     if (unsubscribeObservations) unsubscribeObservations();
     return;
   }
@@ -318,7 +315,7 @@ auth.onAuthStateChanged(user => {
   logoutBtn.style.display = "block";
   observationForm.style.display = "block";
   listVisible = false;
-  isBlueMode = false;
+  toggleActive = false;  // ← Resetoi toggle kirjautuessa
   totalCount.classList.remove("blue");
   subscribeObservations();
 });
@@ -326,10 +323,10 @@ auth.onAuthStateChanged(user => {
 /* LOGIN / REGISTER */
 loginBtn.onclick = async () => {
   try {
-    await auth.signInWithEmailAndPassword(email.value, password.value);
+    await auth.signInWithEmailAndPassword(emailEl.value, passwordEl.value);
   } catch (err) {
     try {
-      await auth.createUserWithEmailAndPassword(email.value, password.value);
+      await auth.createUserWithEmailAndPassword(emailEl.value, passwordEl.value);
     } catch (e) {
       alert(e.message);
     }
@@ -340,6 +337,7 @@ logoutBtn.onclick = () => auth.signOut();
 </script>
 </body>
 </html>
+
 
 
 
