@@ -36,6 +36,27 @@
       color: #e3f2fd;
     }
 
+    /* ✅ UUSI: Vahvistusilmoitus */
+    .success-message {
+      background: #4caf50;
+      color: white;
+      padding: 1rem;
+      border-radius: 12px;
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      transform: translateY(-100%);
+      opacity: 0;
+      transition: all 0.3s ease;
+      position: relative;
+      z-index: 1000;
+    }
+    .success-message.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
     form { background: white; padding: 1rem; border-radius: 12px; }
     label { display: block; margin-top: 0.75rem; font-weight: 600; }
     input, button {
@@ -92,7 +113,7 @@
 <body>
 <header>
   <h1>🦉 Lintuhavainnot</h1>
-  <div class="version">v1.7</div>
+  <div class="version">v1.8</div>
 </header>
 
 <main>
@@ -104,6 +125,9 @@
     <button id="loginBtn">Kirjaudu / Rekisteröidy</button>
     <button id="logoutBtn" style="display:none">Kirjaudu ulos</button>
   </div>
+
+  <!-- ✅ UUSI: Vahvistusilmoitus -->
+  <div class="success-message" id="successMessage">✅ Talletus onnistui!</div>
 
   <div class="total" id="totalCount">Havaintoja yhteensä: 0</div>
 
@@ -149,6 +173,7 @@ const observationForm = document.getElementById("observationForm");
 const observations = document.getElementById("observations");
 const speciesInput = document.getElementById("species");
 const suggestions = document.getElementById("suggestions");
+const successMessage = document.getElementById("successMessage"); // ✅ UUSI
 
 /* SIJAINTI + KARTTA */
 let currentLat = null, currentLon = null;
@@ -189,10 +214,18 @@ speciesInput.oninput = () => {
     });
 };
 
+/* ✅ UUSI: Vahvistuksen näyttäminen 3s */
+function showSuccess() {
+  successMessage.classList.add("show");
+  setTimeout(() => {
+    successMessage.classList.remove("show");
+  }, 3000);
+}
+
 /* HAVAINTOJEN LISTA + LASKURI (per käyttäjä) */
 const yearNow = new Date().getFullYear();
 let listVisible = false;
-let toggleActive = false;  // ← KORJATTU: selkeämpi nimi
+let toggleActive = false;
 
 function subscribeObservations() {
   if (!currentUser) return;
@@ -234,7 +267,6 @@ function subscribeObservations() {
         }
       });
 
-      // ← KORJATTU: Teksti päivittyy aina snapshotin mukaan
       if (toggleActive) {
         totalCount.textContent = `${yearNow} linnut`;
       } else {
@@ -247,15 +279,14 @@ function subscribeObservations() {
     });
 }
 
-/* TOGGLE: VÄRI + SCROLL (teksti snapshotin vastuulla) ← KORJATTU */
+/* TOGGLE */
 totalCount.onclick = () => {
   if (!currentUser) return;
 
-  toggleActive = !toggleActive;  // ← Vain tila muuttuu
+  toggleActive = !toggleActive;
   listVisible = true;
   observations.style.display = "block";
 
-  // Vain väri muuttuu välittömästi, teksti päivittyy snapshotissa
   totalCount.classList.toggle("blue", toggleActive);
 
   if (observations.firstElementChild) {
@@ -275,22 +306,30 @@ observations.addEventListener("click", async e => {
   }
 });
 
-/* TALLENNUS */
+/* TALLENNUS ✅ KORJATTU: Lisätty vahvistus */
 observationForm.onsubmit = async e => {
   e.preventDefault();
   if (!currentUser) return;
   if (!speciesInput.value.trim()) return;
 
-  await db.collection("observations").add({
-    uid: currentUser.uid,
-    species: speciesInput.value.trim(),
-    timestamp: Date.now(),
-    lat: currentLat,
-    lon: currentLon
-  });
+  try {
+    await db.collection("observations").add({
+      uid: currentUser.uid,
+      species: speciesInput.value.trim(),
+      timestamp: Date.now(),
+      lat: currentLat,
+      lon: currentLon
+    });
 
-  observationForm.reset();
-  suggestions.innerHTML = "";
+    observationForm.reset();
+    suggestions.innerHTML = "";
+    
+    // ✅ UUSI: Näytä vahvistus 3s
+    showSuccess();
+    
+  } catch (error) {
+    console.error("Talletus epäonnistui:", error);
+  }
 };
 
 /* AUTH STATE */
@@ -306,7 +345,8 @@ auth.onAuthStateChanged(user => {
     observations.innerHTML = "";
     observations.style.display = "none";
     listVisible = false;
-    toggleActive = false;  // ← Resetoi toggle
+    toggleActive = false;
+    successMessage.classList.remove("show"); // ✅ Piilota vahvistus
     if (unsubscribeObservations) unsubscribeObservations();
     return;
   }
@@ -315,12 +355,12 @@ auth.onAuthStateChanged(user => {
   logoutBtn.style.display = "block";
   observationForm.style.display = "block";
   listVisible = false;
-  toggleActive = false;  // ← Resetoi toggle kirjautuessa
+  toggleActive = false;
   totalCount.classList.remove("blue");
   subscribeObservations();
 });
 
-/* LOGIN / REGISTER - DEBUG */
+/* LOGIN / REGISTER */
 loginBtn.onclick = async () => {
   console.log("=== LOGIN DEBUG ALKAA ===");
   console.log("Email:", emailEl.value);
@@ -344,11 +384,11 @@ loginBtn.onclick = async () => {
   console.log("=== LOGIN DEBUG LOPPUU ===");
 };
 
-
 logoutBtn.onclick = () => auth.signOut();
 </script>
 </body>
 </html>
+
 
 
 
