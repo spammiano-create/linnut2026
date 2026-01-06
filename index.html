@@ -154,14 +154,23 @@ function loadObservations() {
 }
 
 /* TALLENNUS */
-observationForm.onsubmit = async e => {
+const form = document.getElementById("observationForm");
+
+form.onsubmit = async e => {
   e.preventDefault();
+  if (!speciesInput.value.trim()) return;
+
   await db.collection("observations").add({
-    uid: currentUser.uid,
-    species: species.value,
+    species: speciesInput.value.trim(),
     timestamp: Date.now(),
-    lat, lon
+    lat: currentLat,
+    lon: currentLon
   });
+
+  form.reset();
+  suggestions.innerHTML = "";
+};
+
   observationForm.reset();
 };
 </script>
