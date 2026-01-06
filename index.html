@@ -36,7 +36,7 @@
       color: #e3f2fd;
     }
 
-    /* ✅ UUSI: Vahvistusilmoitus */
+    /* ✅ Vahvistusilmoitus */
     .success-message {
       background: #4caf50;
       color: white;
@@ -113,7 +113,7 @@
 <body>
 <header>
   <h1>🦉 Lintuhavainnot</h1>
-  <div class="version">v1.8</div>
+  <div class="version">v1.9</div>
 </header>
 
 <main>
@@ -126,7 +126,7 @@
     <button id="logoutBtn" style="display:none">Kirjaudu ulos</button>
   </div>
 
-  <!-- ✅ UUSI: Vahvistusilmoitus -->
+  <!-- ✅ Vahvistusilmoitus -->
   <div class="success-message" id="successMessage">✅ Talletus onnistui!</div>
 
   <div class="total" id="totalCount">Havaintoja yhteensä: 0</div>
@@ -136,8 +136,11 @@
       <input type="text" id="species" placeholder="Ala kirjoittaa lajin nimeä" />
       <div id="suggestions" class="suggestions"></div>
     </label>
-    <div id="map"></div>
+    
+    <!-- ✅ MUUTETTU: Tallenna-nappi nyt LAJIN ALAPUOLELLE -->
     <button type="submit">Tallenna havainto</button>
+    
+    <div id="map"></div>
   </form>
 
   <ul id="observations"></ul>
@@ -173,7 +176,7 @@ const observationForm = document.getElementById("observationForm");
 const observations = document.getElementById("observations");
 const speciesInput = document.getElementById("species");
 const suggestions = document.getElementById("suggestions");
-const successMessage = document.getElementById("successMessage"); // ✅ UUSI
+const successMessage = document.getElementById("successMessage");
 
 /* SIJAINTI + KARTTA */
 let currentLat = null, currentLon = null;
@@ -214,7 +217,7 @@ speciesInput.oninput = () => {
     });
 };
 
-/* ✅ UUSI: Vahvistuksen näyttäminen 3s */
+/* ✅ Vahvistus 3s */
 function showSuccess() {
   successMessage.classList.add("show");
   setTimeout(() => {
@@ -222,7 +225,7 @@ function showSuccess() {
   }, 3000);
 }
 
-/* HAVAINTOJEN LISTA + LASKURI (per käyttäjä) */
+/* HAVAINTOJEN LISTA + LASKURI */
 const yearNow = new Date().getFullYear();
 let listVisible = false;
 let toggleActive = false;
@@ -306,7 +309,7 @@ observations.addEventListener("click", async e => {
   }
 });
 
-/* TALLENNUS ✅ KORJATTU: Lisätty vahvistus */
+/* TALLENNUS */
 observationForm.onsubmit = async e => {
   e.preventDefault();
   if (!currentUser) return;
@@ -323,8 +326,6 @@ observationForm.onsubmit = async e => {
 
     observationForm.reset();
     suggestions.innerHTML = "";
-    
-    // ✅ UUSI: Näytä vahvistus 3s
     showSuccess();
     
   } catch (error) {
@@ -346,7 +347,7 @@ auth.onAuthStateChanged(user => {
     observations.style.display = "none";
     listVisible = false;
     toggleActive = false;
-    successMessage.classList.remove("show"); // ✅ Piilota vahvistus
+    successMessage.classList.remove("show");
     if (unsubscribeObservations) unsubscribeObservations();
     return;
   }
@@ -388,6 +389,7 @@ logoutBtn.onclick = () => auth.signOut();
 </script>
 </body>
 </html>
+
 
 
 
