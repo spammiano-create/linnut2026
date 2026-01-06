@@ -64,23 +64,23 @@
       border-radius: 12px; 
       display: flex;
       flex-direction: column;
-      gap: 1rem; /* ← UUSI: Tasainen välistys */
+      gap: 1rem;
     }
     
     label { 
       display: block; 
       font-weight: 600; 
-      margin-bottom: 0.25rem; /* ← UUSI: Pieni väli otsikon ja inputin välissä */
+      margin-bottom: 0.25rem;
     }
     
     input, button {
       width: 100%;
-      padding: 0.75rem; /* ← UUSI: Hieman enemmän paddingia kosketukseen */
-      margin: 0; /* ← UUSI: Nollaa marginaalit flex gapin takia */
+      padding: 0.75rem;
+      margin: 0;
       border-radius: 8px;
       border: 1px solid #ccc;
       font-size: 1rem;
-      box-sizing: border-box; /* ← UUSI: Sisältää paddingin leveyteen */
+      box-sizing: border-box;
     }
     
     button { 
@@ -88,8 +88,8 @@
       color: white; 
       border: none; 
       font-weight: 600;
-      font-size: 1.1rem; /* ← UUSI: Hieman suurempi nappiteksti */
-      min-height: 48px; /* ← UUSI: Mobiiliystävällinen kosketusalue */
+      font-size: 1.1rem;
+      min-height: 48px;
       cursor: pointer;
     }
     
@@ -101,15 +101,25 @@
       transform: scale(0.98);
     }
 
-    /* ✅ UUSI: Kartta mobiilissa responsiivinen */
-    #map { 
-      height: 280px; /* ← UUSI: Hieman korkeampi */
-      border-radius: 12px; 
-      width: 100%; /* ← UUSI: Täysi leveys */
-      display: none;
+    /* ✅ KARTTA: Draggable marker info */
+    .location-info {
+      background: #e8f5e9;
+      padding: 0.75rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      text-align: center;
+      margin-top: 0.5rem;
+      border-left: 4px solid #4caf50;
     }
 
-    /* ✅ UUSI: Mobiililaitteet (alle 768px) */
+    #map { 
+      height: 280px;
+      border-radius: 12px; 
+      width: 100%;
+      display: none;
+      position: relative;
+    }
+
     @media (max-width: 768px) {
       main { padding: 0.75rem; }
       
@@ -119,17 +129,17 @@
       }
       
       input, button {
-        padding: 1rem; /* ← UUSI: Enemmän paddingia sormille */
+        padding: 1rem;
         font-size: 1.05rem;
       }
       
       button {
-        min-height: 52px; /* ← UUSI: Isompi kosketusalue */
+        min-height: 52px;
         font-size: 1.15rem;
       }
       
       #map { 
-        height: 300px; /* ← UUSI: Korkeampi mobiilissa */
+        height: 300px;
       }
       
       header { padding: 1.25rem 1rem; }
@@ -144,7 +154,6 @@
       }
     }
 
-    /* ✅ Ehkäise zoomaus kaksoisklikkauksella mobiilissa */
     @media (hover: none) {
       #map { touch-action: pan-x pan-y pinch-zoom; }
     }
@@ -165,13 +174,13 @@
       color: white;
       border: none;
       border-radius: 50%;
-      width: 36px; /* ← UUSI: Isompi mobiilissa */
+      width: 36px;
       height: 36px;
       cursor: pointer;
       font-size: 1rem;
       font-weight: bold;
       margin-left: 1rem;
-      min-height: 36px; /* ← UUSI: Tasainen korkeus */
+      min-height: 36px;
     }
     .delete-btn:hover { background: #b71c1c; }
 
@@ -183,13 +192,13 @@
       border-radius: 8px;
       max-height: 200px;
       overflow-y: auto;
-      position: absolute; /* ← UUSI: Parempi asemointi */
+      position: absolute;
       z-index: 10;
       width: 100%;
       box-sizing: border-box;
     }
     .suggestions div { 
-      padding: 0.75rem; /* ← UUSI: Isompi klikkausalue */
+      padding: 0.75rem;
       cursor: pointer; 
     }
     .suggestions div:hover { background: #e8f5e9; }
@@ -199,7 +208,7 @@
 <body>
 <header>
   <h1>🦉 Lintuhavainnot</h1>
-  <div class="version">v1.10</div>
+  <div class="version">v1.11</div>
 </header>
 
 <main>
@@ -225,7 +234,12 @@
     
     <button type="submit">Tallenna havainto</button>
     
-    <div id="map"></div>
+    <div id="map">
+      <!-- ✅ UUSI: Draggable sijaintimarkkeri + koordinaatinäyttö -->
+      <div class="location-info" id="locationInfo" style="display:none">
+        🗺️ Raahaa punaista markkeria haluamaasi kohtaan
+      </div>
+    </div>
   </form>
 
   <ul id="observations"></ul>
@@ -262,23 +276,59 @@ const observations = document.getElementById("observations");
 const speciesInput = document.getElementById("species");
 const suggestions = document.getElementById("suggestions");
 const successMessage = document.getElementById("successMessage");
+const locationInfo = document.getElementById("locationInfo"); // ✅ UUSI
 
-/* SIJAINTI + KARTTA */
-let currentLat = null, currentLon = null;
-let map, markers = [];
+/* ✅ PÄIVITETTY: KARTTA + DRAGGABLE MARKKERI */
+let currentLat = 60.1699, currentLon = 24.9384; // ← Oletus: Helsinki
+let map, currentMarker, observationMarkers = [];
 const mapDiv = document.getElementById("map");
 
 if (navigator.geolocation) {
   navigator.geolocation.getCurrentPosition(p => {
     currentLat = p.coords.latitude;
     currentLon = p.coords.longitude;
-
-    map = L.map("map").setView([currentLat, currentLon], 13);
-    mapDiv.style.display = "block";
-
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+    initMap();
   }, err => {
-    console.warn("Geolocation hylätty tai epäonnistui:", err);
+    console.warn("Geolocation hylätty, käytetään Helsinkiä:", err);
+    initMap();
+  });
+} else {
+  initMap();
+}
+
+function initMap() {
+  map = L.map("map").setView([currentLat, currentLon], 13);
+  mapDiv.style.display = "block";
+  locationInfo.style.display = "block";
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+
+  // ✅ UUSI: Luo draggable punainen markkeri KÄYTTÄjän sijaintiin
+  currentMarker = L.marker([currentLat, currentLon], {
+    draggable: true,
+    title: "Raahaa minua!"
+  }).addTo(map);
+
+  // ✅ UUSI: Päivitä koordinaatit reaaliajassa kun markkeria raahataan
+  currentMarker.on('drag', function(e) {
+    const pos = e.target.getLatLng();
+    currentLat = pos.lat;
+    currentLon = pos.lng;
+  });
+
+  currentMarker.bindPopup("🐦 Tämänhetkinen havaintopaikka<br>Raahaa markkeria muuttaaksesi paikkaa!");
+  currentMarker.openPopup();
+}
+
+// ✅ Päivitä myös GPS-muutos jos saadaan uusi sijainti
+if (navigator.geolocation) {
+  navigator.geolocation.watchPosition(p => {
+    if (map && currentMarker) {
+      currentLat = p.coords.latitude;
+      currentLon = p.coords.longitude;
+      currentMarker.setLatLng([currentLat, currentLon]);
+      map.setView([currentLat, currentLon], 13);
+    }
   });
 }
 
@@ -328,10 +378,10 @@ function subscribeObservations() {
       console.log("Snapshot:", snap.size, "dokumenttia");
       
       observations.innerHTML = "";
-      markers.forEach(m => map && map.removeLayer(m));
-      markers = [];
-      let total = 0;
+      observationMarkers.forEach(m => map && map.removeLayer(m));
+      observationMarkers = [];
 
+      let total = 0;
       snap.forEach(doc => {
         const o = doc.data();
         if (!o.timestamp) return;
@@ -351,7 +401,7 @@ function subscribeObservations() {
         if (o.lat && o.lon && map) {
           const m = L.marker([o.lat, o.lon]).addTo(map);
           m.bindPopup(o.species);
-          markers.push(m);
+          observationMarkers.push(m);
         }
       });
 
@@ -394,7 +444,7 @@ observations.addEventListener("click", async e => {
   }
 });
 
-/* TALLENNUS */
+/* TALLENNUS - Käyttää currentMarkerin sijaintia! */
 observationForm.onsubmit = async e => {
   e.preventDefault();
   if (!currentUser) return;
@@ -405,7 +455,7 @@ observationForm.onsubmit = async e => {
       uid: currentUser.uid,
       species: speciesInput.value.trim(),
       timestamp: Date.now(),
-      lat: currentLat,
+      lat: currentLat,    // ← Luetaan DRAGGABLE MARKERIN positiosta
       lon: currentLon
     });
 
@@ -474,6 +524,7 @@ logoutBtn.onclick = () => auth.signOut();
 </script>
 </body>
 </html>
+
 
 
 
