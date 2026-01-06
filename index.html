@@ -320,18 +320,30 @@ auth.onAuthStateChanged(user => {
   subscribeObservations();
 });
 
-/* LOGIN / REGISTER */
+/* LOGIN / REGISTER - DEBUG */
 loginBtn.onclick = async () => {
+  console.log("=== LOGIN DEBUG ALKAA ===");
+  console.log("Email:", emailEl.value);
+  console.log("Password:", passwordEl.value);
+  
   try {
+    console.log("Yritetään login...");
     await auth.signInWithEmailAndPassword(emailEl.value, passwordEl.value);
+    console.log("✅ LOGIN ONNISTUI!");
   } catch (err) {
+    console.log("❌ Login epäonnistui:", err.code, err.message);
     try {
+      console.log("Yritetään rekisteröinti...");
       await auth.createUserWithEmailAndPassword(emailEl.value, passwordEl.value);
+      console.log("✅ REKISTERÖINTI ONNISTUI!");
     } catch (e) {
-      alert(e.message);
+      console.log("❌ Rekisteröinti epäonnistui:", e.code, e.message);
+      alert(`Virhe: ${e.message}`);
     }
   }
+  console.log("=== LOGIN DEBUG LOPPUU ===");
 };
+
 
 logoutBtn.onclick = () => auth.signOut();
 </script>
