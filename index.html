@@ -5,33 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lintuhavainnot</title>
 
-  <!-- Leaflet CSS -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
   <style>
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      margin: 0;
-      background: #f6f7f8;
-    }
-    header {
-      background: #2e7d32;
-      color: white;
+    body { font-family: system-ui; margin: 0; background: #f6f7f8; }
+    header { background: #2e7d32; color: white; padding: 1rem; text-align: center; }
+    main { padding: 1rem; max-width: 720px; margin: auto; }
+
+    .auth {
+      background: white;
       padding: 1rem;
-      text-align: center;
+      border-radius: 12px;
+      margin-bottom: 1rem;
     }
-    .version {
-      font-size: 0.75rem;
-      opacity: 0.8;
-    }
-    main {
-      padding: 1rem;
-      max-width: 720px;
-      margin: auto;
-    }
+
     .total {
       background: #1b5e20;
       color: white;
@@ -41,282 +28,145 @@
       font-size: 1.2rem;
       margin-bottom: 1rem;
       cursor: pointer;
-      transition: background 0.2s ease, color 0.2s ease;
     }
-    .total.blue {
-      background: #1565c0;
-      color: #e3f2fd;
-    }
-    form {
-      background: white;
-      padding: 1rem;
-      border-radius: 12px;
-    }
-    label {
-      display: block;
-      margin-top: 0.75rem;
-      font-weight: 600;
-    }
-    input,
-    button {
-      width: 100%;
-      padding: 0.6rem;
-      margin-top: 0.25rem;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-size: 1rem;
-    }
-    button {
-      background: #2e7d32;
-      color: white;
-      border: none;
-      margin-top: 1rem;
-      font-weight: 600;
-    }
-    ul {
-      list-style: none;
-      padding: 0;
-      display: none;
-    }
-    li {
-      background: white;
-      margin-top: 0.5rem;
-      padding: 0.75rem;
-      border-radius: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .li-content {
-      flex-grow: 1;
-    }
-    .delete-btn {
-      background: #d32f2f;
-      color: white;
-      border: none;
-      border-radius: 50%;
-      width: 28px;
-      height: 28px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      font-weight: bold;
-      margin-left: 1rem;
-    }
-    .delete-btn:hover {
-      background: #b71c1c;
-    }
-    .meta {
-      font-size: 0.9rem;
-      color: #555;
-    }
-    #map {
-      height: 250px;
-      margin-top: 1rem;
-      border-radius: 12px;
-      display: none;
-    }
-    .suggestions {
-      background: white;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      max-height: 200px;
-      overflow-y: auto;
-    }
-    .suggestions div {
-      padding: 0.5rem;
-      cursor: pointer;
-    }
-    .suggestions div:hover {
-      background: #e8f5e9;
-    }
+
+    form { background: white; padding: 1rem; border-radius: 12px; }
+    label { display: block; margin-top: 0.75rem; font-weight: 600; }
+    input, button { width: 100%; padding: 0.6rem; margin-top: 0.25rem; border-radius: 8px; }
+    button { background: #2e7d32; color: white; border: none; font-weight: 600; }
+
+    ul { list-style: none; padding: 0; display: none; }
+    li { background: white; margin-top: 0.5rem; padding: 0.75rem; border-radius: 10px; }
+
+    #map { height: 250px; margin-top: 1rem; border-radius: 12px; display: none; }
+
+    .suggestions { background: white; border: 1px solid #ccc; border-radius: 8px; }
+    .suggestions div { padding: 0.5rem; cursor: pointer; }
+    .suggestions div:hover { background: #e8f5e9; }
   </style>
 </head>
 
 <body>
 <header>
   <h1>🦉 Lintuhavainnot</h1>
-  <div class="version">v1.3</div>
 </header>
 
 <main>
-  <div class="total" id="totalCount">Havaintoja yhteensä: 0</div>
 
-  <form id="observationForm" autocomplete="off">
+  <!-- 🔐 KIRJAUTUMINEN -->
+  <div class="auth">
+    <input id="email" placeholder="Sähköposti">
+    <input id="password" type="password" placeholder="Salasana">
+    <button id="loginBtn">Kirjaudu / Rekisteröidy</button>
+    <button id="logoutBtn" style="display:none">Kirjaudu ulos</button>
+  </div>
+
+  <div class="total" id="totalCount">Kirjaudu sisään</div>
+
+  <form id="observationForm" autocomplete="off" style="display:none">
     <label>Laji
-      <input type="text" id="species" placeholder="Ala kirjoittaa lajin nimeä" required />
+      <input type="text" id="species" />
       <div id="suggestions" class="suggestions"></div>
     </label>
-
     <div id="map"></div>
-
     <button type="submit">Tallenna havainto</button>
   </form>
 
   <ul id="observations"></ul>
 </main>
 
-<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<!-- Firebase compat SDK:t -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <script type="module">
-  import { speciesList } from "./species.js";
+import { speciesList } from "./species.js";
 
-  /* FIREBASE KONFIGURAATIO */
-  firebase.initializeApp({
-    apiKey: "AIzaSyDQEGBV8yBGcbdzKCpBD8u_EwMhvJCZXDI",
-    authDomain: "linnut2026.firebaseapp.com",
-    projectId: "linnut2026"
-  });
-  const db = firebase.firestore();
+/* FIREBASE */
+firebase.initializeApp({
+  apiKey: "AIzaSyDQEGBV8yBGcbdzKCpBD8u_EwMhvJCZXDI",
+  authDomain: "linnut2026.firebaseapp.com",
+  projectId: "linnut2026"
+});
 
-  /* Autocomplete lajille */
-  const speciesInput = document.getElementById("species");
-  const suggestions = document.getElementById("suggestions");
+const auth = firebase.auth();
+const db = firebase.firestore();
 
-  speciesInput.addEventListener("input", () => {
-    const q = speciesInput.value.trim().toLowerCase();
-    suggestions.innerHTML = "";
-    if (q.length < 1) return;
-    const matches = speciesList.filter(s => s.toLowerCase().startsWith(q));
-    matches.forEach(name => {
-      const div = document.createElement("div");
-      div.textContent = name;
-      div.onclick = () => {
-        speciesInput.value = name;
-        suggestions.innerHTML = "";
-      };
-      suggestions.appendChild(div);
-    });
-  });
+let currentUser = null;
 
-  /* SIJAINTI + KARTTA */
-  let map, currentLat = null, currentLon = null, markers = [];
-  const mapDiv = document.getElementById("map");
+/* AUTH STATE */
+auth.onAuthStateChanged(user => {
+  currentUser = user;
+  observationForm.style.display = user ? "block" : "none";
+  logoutBtn.style.display = user ? "block" : "none";
+  loginBtn.style.display = user ? "none" : "block";
+  totalCount.textContent = user ? "Havaintoja yhteensä: 0" : "Kirjaudu sisään";
+  if (user) loadObservations();
+});
 
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(pos => {
-      currentLat = pos.coords.latitude;
-      currentLon = pos.coords.longitude;
-
-      map = L.map("map").setView([currentLat, currentLon], 13);
-      mapDiv.style.display = "block";
-
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "&copy; OpenStreetMap contributors"
-      }).addTo(map);
-    }, err => {
-      console.warn("Geolocation hylätty tai epäonnistui:", err);
-    });
+/* LOGIN / REGISTER */
+loginBtn.onclick = async () => {
+  try {
+    await auth.signInWithEmailAndPassword(email.value, password.value);
+  } catch {
+    await auth.createUserWithEmailAndPassword(email.value, password.value);
   }
+};
+logoutBtn.onclick = () => auth.signOut();
 
-  /* LISTA + LASKURI */
-  const listEl = document.getElementById("observations");
-  const totalEl = document.getElementById("totalCount");
-  const yearNow = new Date().getFullYear();
-  let listVisible = false;
-  let isBlueMode = false;
-
-  db.collection("observations")
-    .orderBy("timestamp", "desc")
-    .onSnapshot(snap => {
-      listEl.innerHTML = "";
-      markers.forEach(m => map && map.removeLayer(m));
-      markers = [];
-      let total = 0;
-
-      snap.forEach(doc => {
-        const o = doc.data();
-        if (!o.timestamp) return;
-        if (new Date(o.timestamp).getFullYear() !== yearNow) return;
-
-        total++;
-
-        const li = document.createElement("li");
-        li.innerHTML = `
-          <div class="li-content">
-            <strong>${o.species}</strong>
-            <div class="meta">
-              ${new Date(o.timestamp).toLocaleString()}
-            </div>
-          </div>
-          <button class="delete-btn" data-doc-id="${doc.id}">×</button>`;
-        listEl.appendChild(li);
-
-        if (o.lat && o.lon && map) {
-          const m = L.marker([o.lat, o.lon]).addTo(map);
-          m.bindPopup(o.species);
-          markers.push(m);
-        }
-      });
-
-      // Päivitä teksti tilanteen mukaan
-      if (isBlueMode) {
-        totalEl.textContent = `${yearNow} linnut`;
-        totalEl.classList.add("blue");
-      } else {
-        totalEl.textContent = `Havaintoja yhteensä (${yearNow}): ${total}`;
-        totalEl.classList.remove("blue");
-      }
-
-      listEl.style.display = listVisible ? "block" : "none";
-    });
-
-  /* TOGGLE: VÄRI + TEKSTI + SCROLL */
-  totalEl.onclick = () => {
-    isBlueMode = !isBlueMode;
-    listVisible = true;
-    listEl.style.display = "block";
-
-    if (isBlueMode) {
-      totalEl.textContent = `${yearNow} linnut`;
-      totalEl.classList.add("blue");
-    } else {
-      totalEl.textContent = `Havaintoja yhteensä (${yearNow}): 0`; // Päivitetään snapshotissa
-      totalEl.classList.remove("blue");
-    }
-
-    // Scrollaa listan alkuun
-    if (listEl.firstElementChild) {
-      listEl.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  };
-
-  /* POISTONAPPIEN KUUNTELIJA */
-  listEl.addEventListener("click", async e => {
-    if (e.target.classList.contains("delete-btn")) {
-      const docId = e.target.dataset.docId;
-      try {
-        await db.collection("observations").doc(docId).delete();
-      } catch (error) {
-        console.error("Poisto epäonnistui:", error);
-      }
-    }
+/* AUTOCOMPLETE */
+species.oninput = () => {
+  suggestions.innerHTML = "";
+  const q = species.value.toLowerCase();
+  speciesList.filter(s => s.toLowerCase().startsWith(q)).slice(0,10).forEach(s => {
+    const d = document.createElement("div");
+    d.textContent = s;
+    d.onclick = () => { species.value = s; suggestions.innerHTML = ""; };
+    suggestions.appendChild(d);
   });
+};
 
-  /* TALLENNUS */
-  const form = document.getElementById("observationForm");
+/* SIJAINTI */
+let lat, lon;
+navigator.geolocation?.getCurrentPosition(p => {
+  lat = p.coords.latitude;
+  lon = p.coords.longitude;
+  const map = L.map("map").setView([lat, lon], 13);
+  document.getElementById("map").style.display = "block";
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+});
 
-  form.onsubmit = async e => {
-    e.preventDefault();
-    if (!speciesInput.value.trim()) return;
-
-    await db.collection("observations").add({
-      species: speciesInput.value.trim(),
-      timestamp: Date.now(),
-      lat: currentLat,
-      lon: currentLon
+/* HAVAINNOT */
+function loadObservations() {
+  db.collection("observations")
+    .where("uid", "==", currentUser.uid)
+    .onSnapshot(snap => {
+      observations.innerHTML = "";
+      totalCount.textContent = `Havaintoja yhteensä: ${snap.size}`;
+      snap.forEach(d => {
+        const li = document.createElement("li");
+        li.textContent = d.data().species;
+        observations.appendChild(li);
+      });
     });
+}
 
-    form.reset();
-    suggestions.innerHTML = "";
-  };
+/* TALLENNUS */
+observationForm.onsubmit = async e => {
+  e.preventDefault();
+  await db.collection("observations").add({
+    uid: currentUser.uid,
+    species: species.value,
+    timestamp: Date.now(),
+    lat, lon
+  });
+  observationForm.reset();
+};
 </script>
 </body>
 </html>
+
 
 
 
