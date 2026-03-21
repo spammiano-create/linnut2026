@@ -13,7 +13,12 @@
     .version { font-size: 0.75rem; opacity: 0.8; }
     main { padding: 1rem; max-width: 720px; margin: auto; }
 
-    .auth { background: white; padding: 1rem; border-radius: 12px; margin-bottom: 1rem; }
+    .auth {
+      background: white;
+      padding: 1rem;
+      border-radius: 12px;
+      margin-bottom: 1rem;
+    }
 
     .total {
       background: #1b5e20;
@@ -24,78 +29,206 @@
       font-size: 1.2rem;
       margin-bottom: 1rem;
       cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+    .total.blue {
+      background: #1565c0;
+      color: #e3f2fd;
     }
 
-    .total.blue { background: #1565c0; }
-
+    /* ✅ Vahvistusilmoitus */
     .success-message {
       background: #4caf50;
       color: white;
       padding: 1rem;
       border-radius: 12px;
       text-align: center;
+      font-size: 1.1rem;
+      font-weight: 600;
       margin-bottom: 1rem;
       transform: translateY(-100%);
       opacity: 0;
-      transition: 0.3s;
+      transition: all 0.3s ease;
+      position: relative;
+      z-index: 1000;
     }
     .success-message.show {
       transform: translateY(0);
       opacity: 1;
     }
 
-    form { background: white; padding: 1.5rem; border-radius: 12px; display:flex; flex-direction:column; gap:1rem; }
-    input, button { width:100%; padding:0.8rem; border-radius:8px; border:1px solid #ccc; }
-    button { background:#2e7d32; color:white; border:none; }
+    /* ✅ PÄIVITETTY: Lomakkeen mobiiliystävällinen CSS */
+    form { 
+      background: white; 
+      padding: 1.5rem; 
+      border-radius: 12px; 
+      display: flex;
+      flex-direction: column;
+      gap: 1rem; /* ← UUSI: Tasainen välistys */
+    }
+    
+    label { 
+      display: block; 
+      font-weight: 600; 
+      margin-bottom: 0.25rem; /* ← UUSI: Pieni väli otsikon ja inputin välissä */
+    }
+    
+    input, button {
+      width: 100%;
+      padding: 0.75rem; /* ← UUSI: Hieman enemmän paddingia kosketukseen */
+      margin: 0; /* ← UUSI: Nollaa marginaalit flex gapin takia */
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+      box-sizing: border-box; /* ← UUSI: Sisältää paddingin leveyteen */
+    }
+    
+    button { 
+      background: #2e7d32; 
+      color: white; 
+      border: none; 
+      font-weight: 600;
+      font-size: 1.1rem; /* ← UUSI: Hieman suurempi nappiteksti */
+      min-height: 48px; /* ← UUSI: Mobiiliystävällinen kosketusalue */
+      cursor: pointer;
+    }
+    
+    button:hover:not(:disabled) {
+      background: #1b5e20;
+    }
+    
+    button:active {
+      transform: scale(0.98);
+    }
 
-    #map { height:280px; border-radius:12px; display:none; }
+    /* ✅ UUSI: Kartta mobiilissa responsiivinen */
+    #map { 
+      height: 280px; /* ← UUSI: Hieman korkeampi */
+      border-radius: 12px; 
+      width: 100%; /* ← UUSI: Täysi leveys */
+      display: none;
+    }
 
-    ul { list-style:none; padding:0; }
-    li { background:white; margin-top:0.5rem; padding:0.75rem; border-radius:10px; }
+    /* ✅ UUSI: Mobiililaitteet (alle 768px) */
+    @media (max-width: 768px) {
+      main { padding: 0.75rem; }
+      
+      form { 
+        padding: 1.25rem; 
+        gap: 1.25rem;
+      }
+      
+      input, button {
+        padding: 1rem; /* ← UUSI: Enemmän paddingia sormille */
+        font-size: 1.05rem;
+      }
+      
+      button {
+        min-height: 52px; /* ← UUSI: Isompi kosketusalue */
+        font-size: 1.15rem;
+      }
+      
+      #map { 
+        height: 300px; /* ← UUSI: Korkeampi mobiilissa */
+      }
+      
+      header { padding: 1.25rem 1rem; }
+      .total { 
+        padding: 1.25rem; 
+        font-size: 1.3rem; 
+      }
+      
+      .success-message {
+        padding: 1.25rem;
+        font-size: 1.15rem;
+      }
+    }
 
-    .suggestions { background:white; border:1px solid #ccc; border-radius:8px; position:absolute; width:100%; }
-    .suggestions div { padding:0.5rem; cursor:pointer; }
+    /* ✅ Ehkäise zoomaus kaksoisklikkauksella mobiilissa */
+    @media (hover: none) {
+      #map { touch-action: pan-x pan-y pinch-zoom; }
+    }
+
+    ul { list-style: none; padding: 0; display: none; }
+    li {
+      background: white;
+      margin-top: 0.5rem;
+      padding: 0.75rem;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .li-content { flex-grow: 1; }
+    .delete-btn {
+      background: #d32f2f;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 36px; /* ← UUSI: Isompi mobiilissa */
+      height: 36px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: bold;
+      margin-left: 1rem;
+      min-height: 36px; /* ← UUSI: Tasainen korkeus */
+    }
+    .delete-btn:hover { background: #b71c1c; }
+
+    .meta { font-size: 0.9rem; color: #555; }
+
+    .suggestions {
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+      position: absolute; /* ← UUSI: Parempi asemointi */
+      z-index: 10;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .suggestions div { 
+      padding: 0.75rem; /* ← UUSI: Isompi klikkausalue */
+      cursor: pointer; 
+    }
+    .suggestions div:hover { background: #e8f5e9; }
   </style>
 </head>
 
 <body>
 <header>
   <h1>🦉 Lintuhavainnot</h1>
-  <div class="version">v1.11</div>
+  <div class="version">v1.10</div>
 </header>
 
 <main>
 
-<div class="auth">
-  <input id="email" placeholder="Sähköposti">
-  <input id="password" type="password" placeholder="Salasana">
-  <button id="loginBtn">Kirjaudu / Rekisteröidy</button>
-  <button id="logoutBtn" style="display:none">Kirjaudu ulos</button>
-</div>
+  <!-- 🔐 KIRJAUTUMINEN -->
+  <div class="auth">
+    <input id="email" placeholder="Sähköposti">
+    <input id="password" type="password" placeholder="Salasana">
+    <button id="loginBtn">Kirjaudu / Rekisteröidy</button>
+    <button id="logoutBtn" style="display:none">Kirjaudu ulos</button>
+  </div>
 
-<div id="successMessage" class="success-message">✅ Tallennettu!</div>
+  <!-- ✅ Vahvistusilmoitus -->
+  <div class="success-message" id="successMessage">✅ Talletus onnistui!</div>
 
-<div id="totalCount" class="total">Kirjaudu sisään</div>
+  <div class="total" id="totalCount">Havaintoja yhteensä: 0</div>
 
-<form id="observationForm" style="display:none">
-  
-  <label>Laji
-    <input id="species">
-    <div id="suggestions" class="suggestions"></div>
-  </label>
+  <form id="observationForm" autocomplete="off" style="display:none">
+    <label>Laji
+      <input type="text" id="species" placeholder="Ala kirjoittaa lajin nimeä" />
+      <div id="suggestions" class="suggestions"></div>
+    </label>
+    
+    <button type="submit">Tallenna havainto</button>
+    
+    <div id="map"></div>
+  </form>
 
-  <!-- ✅ UUSI -->
-  <label>Päivä ja kellonaika
-    <input type="datetime-local" id="datetime">
-  </label>
-
-  <button type="submit">Tallenna havainto</button>
-
-  <div id="map"></div>
-</form>
-
-<ul id="observations"></ul>
-
+  <ul id="observations"></ul>
 </main>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -107,7 +240,7 @@
 import { speciesList } from "./species.js";
 
 firebase.initializeApp({
-  apiKey: "AIza...",
+  apiKey: "AIzaSyDQEGBV8yBGcbdzKCpBD8u_EwMhvJCZXDI",
   authDomain: "linnut2026.firebaseapp.com",
   projectId: "linnut2026"
 });
@@ -116,120 +249,231 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 let currentUser = null;
-let unsubscribe = null;
+let unsubscribeObservations = null;
 
 /* ELEMENTIT */
-const email = document.getElementById("email");
-const password = document.getElementById("password");
+const emailEl = document.getElementById("email");
+const passwordEl = document.getElementById("password");
 const loginBtn = document.getElementById("loginBtn");
 const logoutBtn = document.getElementById("logoutBtn");
-const total = document.getElementById("totalCount");
-const form = document.getElementById("observationForm");
-const list = document.getElementById("observations");
-const species = document.getElementById("species");
+const totalCount = document.getElementById("totalCount");
+const observationForm = document.getElementById("observationForm");
+const observations = document.getElementById("observations");
+const speciesInput = document.getElementById("species");
 const suggestions = document.getElementById("suggestions");
-const datetimeInput = document.getElementById("datetime");
-const success = document.getElementById("successMessage");
+const successMessage = document.getElementById("successMessage");
 
-/* LOGIN */
-loginBtn.onclick = async () => {
-  try {
-    await auth.signInWithEmailAndPassword(email.value, password.value);
-  } catch {
-    await auth.createUserWithEmailAndPassword(email.value, password.value);
+/* SIJAINTI + KARTTA */
+let currentLat = null, currentLon = null;
+let map, markers = [];
+const mapDiv = document.getElementById("map");
+
+if (navigator.geolocation) {
+  navigator.geolocation.getCurrentPosition(p => {
+    currentLat = p.coords.latitude;
+    currentLon = p.coords.longitude;
+
+    map = L.map("map").setView([currentLat, currentLon], 13);
+    mapDiv.style.display = "block";
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+  }, err => {
+    console.warn("Geolocation hylätty tai epäonnistui:", err);
+  });
+}
+
+/* AUTOCOMPLETE */
+speciesInput.oninput = () => {
+  suggestions.innerHTML = "";
+  const q = speciesInput.value.toLowerCase();
+  if (!q) return;
+
+  speciesList
+    .filter(s => s.toLowerCase().startsWith(q))
+    .slice(0, 10)
+    .forEach(s => {
+      const d = document.createElement("div");
+      d.textContent = s;
+      d.onclick = () => {
+        speciesInput.value = s;
+        suggestions.innerHTML = "";
+      };
+      suggestions.appendChild(d);
+    });
+};
+
+/* ✅ Vahvistus 3s */
+function showSuccess() {
+  successMessage.classList.add("show");
+  setTimeout(() => {
+    successMessage.classList.remove("show");
+  }, 3000);
+}
+
+/* HAVAINTOJEN LISTA + LASKURI */
+const yearNow = new Date().getFullYear();
+let listVisible = false;
+let toggleActive = false;
+
+function subscribeObservations() {
+  if (!currentUser) return;
+  console.log("Subscribe käyttäjälle:", currentUser.uid);
+  
+  if (unsubscribeObservations) unsubscribeObservations();
+
+  unsubscribeObservations = db.collection("observations")
+    .where("uid", "==", currentUser.uid)
+    .orderBy("timestamp", "desc")
+    .onSnapshot(snap => {
+      console.log("Snapshot:", snap.size, "dokumenttia");
+      
+      observations.innerHTML = "";
+      markers.forEach(m => map && map.removeLayer(m));
+      markers = [];
+      let total = 0;
+
+      snap.forEach(doc => {
+        const o = doc.data();
+        if (!o.timestamp) return;
+        if (new Date(o.timestamp).getFullYear() !== yearNow) return;
+
+        total++;
+
+        const li = document.createElement("li");
+        li.innerHTML = `
+          <div class="li-content">
+            <strong>${o.species}</strong>
+            <div class="meta">${new Date(o.timestamp).toLocaleString()}</div>
+          </div>
+          <button class="delete-btn" data-doc-id="${doc.id}">×</button>`;
+        observations.appendChild(li);
+
+        if (o.lat && o.lon && map) {
+          const m = L.marker([o.lat, o.lon]).addTo(map);
+          m.bindPopup(o.species);
+          markers.push(m);
+        }
+      });
+
+      if (toggleActive) {
+        totalCount.textContent = `${yearNow} linnut`;
+      } else {
+        totalCount.textContent = `Havaintoja yhteensä (${yearNow}): ${total}`;
+      }
+      totalCount.classList.toggle("blue", toggleActive);
+      observations.style.display = listVisible ? "block" : "none";
+    }, error => {
+      console.error("Snapshot-virhe:", error);
+    });
+}
+
+/* TOGGLE */
+totalCount.onclick = () => {
+  if (!currentUser) return;
+
+  toggleActive = !toggleActive;
+  listVisible = true;
+  observations.style.display = "block";
+
+  totalCount.classList.toggle("blue", toggleActive);
+
+  if (observations.firstElementChild) {
+    observations.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 };
 
-logoutBtn.onclick = () => auth.signOut();
+/* POISTONAPPIEN KUUNTELIJA */
+observations.addEventListener("click", async e => {
+  if (e.target.classList.contains("delete-btn")) {
+    const docId = e.target.dataset.docId;
+    try {
+      await db.collection("observations").doc(docId).delete();
+    } catch (error) {
+      console.error("Poisto epäonnistui:", error);
+    }
+  }
+});
 
-/* AUTH */
+/* TALLENNUS */
+observationForm.onsubmit = async e => {
+  e.preventDefault();
+  if (!currentUser) return;
+  if (!speciesInput.value.trim()) return;
+
+  try {
+    await db.collection("observations").add({
+      uid: currentUser.uid,
+      species: speciesInput.value.trim(),
+      timestamp: Date.now(),
+      lat: currentLat,
+      lon: currentLon
+    });
+
+    observationForm.reset();
+    suggestions.innerHTML = "";
+    showSuccess();
+    
+  } catch (error) {
+    console.error("Talletus epäonnistui:", error);
+  }
+};
+
+/* AUTH STATE */
 auth.onAuthStateChanged(user => {
   currentUser = user;
 
   if (!user) {
-    form.style.display = "none";
-    loginBtn.style.display = "block";
+    observationForm.style.display = "none";
     logoutBtn.style.display = "none";
-    total.textContent = "Kirjaudu sisään";
-    list.innerHTML = "";
+    loginBtn.style.display = "block";
+    totalCount.textContent = "Kirjaudu sisään";
+    totalCount.classList.remove("blue");
+    observations.innerHTML = "";
+    observations.style.display = "none";
+    listVisible = false;
+    toggleActive = false;
+    successMessage.classList.remove("show");
+    if (unsubscribeObservations) unsubscribeObservations();
     return;
   }
 
-  form.style.display = "block";
   loginBtn.style.display = "none";
   logoutBtn.style.display = "block";
-
-  load();
+  observationForm.style.display = "block";
+  listVisible = false;
+  toggleActive = false;
+  totalCount.classList.remove("blue");
+  subscribeObservations();
 });
 
-/* AUTOCOMPLETE */
-species.oninput = () => {
-  suggestions.innerHTML = "";
-  const q = species.value.toLowerCase();
-  speciesList.filter(s => s.toLowerCase().startsWith(q)).slice(0,10).forEach(s => {
-    const d = document.createElement("div");
-    d.textContent = s;
-    d.onclick = () => { species.value = s; suggestions.innerHTML = ""; };
-    suggestions.appendChild(d);
-  });
+/* LOGIN / REGISTER */
+loginBtn.onclick = async () => {
+  console.log("=== LOGIN DEBUG ALKAA ===");
+  console.log("Email:", emailEl.value);
+  console.log("Password:", passwordEl.value);
+  
+  try {
+    console.log("Yritetään login...");
+    await auth.signInWithEmailAndPassword(emailEl.value, passwordEl.value);
+    console.log("✅ LOGIN ONNISTUI!");
+  } catch (err) {
+    console.log("❌ Login epäonnistui:", err.code, err.message);
+    try {
+      console.log("Yritetään rekisteröinti...");
+      await auth.createUserWithEmailAndPassword(emailEl.value, passwordEl.value);
+      console.log("✅ REKISTERÖINTI ONNISTUI!");
+    } catch (e) {
+      console.log("❌ Rekisteröinti epäonnistui:", e.code, e.message);
+      alert(`Virhe: ${e.message}`);
+    }
+  }
+  console.log("=== LOGIN DEBUG LOPPUU ===");
 };
 
-/* SIJAINTI */
-let lat, lon;
-navigator.geolocation?.getCurrentPosition(p => {
-  lat = p.coords.latitude;
-  lon = p.coords.longitude;
-  const map = L.map("map").setView([lat, lon], 13);
-  document.getElementById("map").style.display = "block";
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
-});
-
-/* LOAD */
-function load() {
-  if (unsubscribe) unsubscribe();
-
-  unsubscribe = db.collection("observations")
-    .where("uid","==",currentUser.uid)
-    .orderBy("timestamp","desc")
-    .onSnapshot(snap => {
-      list.innerHTML = "";
-      total.textContent = `Havaintoja: ${snap.size}`;
-
-      snap.forEach(doc => {
-        const li = document.createElement("li");
-        li.textContent = doc.data().species + " – " + new Date(doc.data().timestamp).toLocaleString();
-        list.appendChild(li);
-      });
-    });
-}
-
-/* SAVE */
-form.onsubmit = async e => {
-  e.preventDefault();
-  if (!species.value.trim()) return;
-
-  let ts = datetimeInput.value
-    ? new Date(datetimeInput.value).getTime()
-    : Date.now();
-
-  await db.collection("observations").add({
-    uid: currentUser.uid,
-    species: species.value,
-    timestamp: ts,
-    lat,
-    lon
-  });
-
-  form.reset();
-  suggestions.innerHTML = "";
-
-  success.classList.add("show");
-  setTimeout(()=>success.classList.remove("show"),2000);
-};
+logoutBtn.onclick = () => auth.signOut();
 </script>
 </body>
 </html>
-
 
 
 
